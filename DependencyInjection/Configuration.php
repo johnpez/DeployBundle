@@ -24,49 +24,53 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        
+
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('deploy');
 
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.
-        
+
         $rootNode->isRequired()
-                ->requiresAtLeastOneElement()
-                ->useAttributeAsKey('name')
-                ->prototype('array')
-                    ->children()
-                        ->scalarNode('rsync_options')
-			->defaultValue('-azC --force --delete --progress -h --checksum')
-                                ->info('Default options used by the rsync command. You can override this value by passing --rsync-options on the command line.')
-                                ->example('-azC --force --delete --progress -h --checksum')
-                                ->end()
-                        ->scalarNode('host')
-                                ->isRequired()
-                                ->cannotBeEmpty()
-                                ->info('Name or IP of the remote server')
-                                ->end()
-                        ->scalarNode('dir')
-                                ->defaultValue('')
-                                ->info('Remote root for your project. NB: this is not the document root. Usually a level before.')
-                                ->end()
-                        ->scalarNode('user')
-                                ->defaultValue('')
-                                ->info('The user on the destination server. If none is specified your local user is used.')
-                                ->end()
-                        ->scalarNode('port')
-                                ->defaultValue('22')
-                                ->info('TCP port.')
-                                ->end()
-                        ->scalarNode('timeout')
-                                ->defaultValue('60')
-                                ->info('Process timeout in seconds. Set it to 0 for no timeout.')
-                                ->end()
-                        ->variableNode('post_deploy_operations')
-                                ->info('Shell commands to run after deploy on the remote machine.')
-                                ->end();
-        
+            ->requiresAtLeastOneElement()
+            ->useAttributeAsKey('name')
+            ->prototype('array')
+            ->children()
+            ->scalarNode('rsync_options')
+            ->defaultValue('-azC --force --delete --progress -h --checksum')
+            ->info('Default options used by the rsync command. You can override this value by passing --rsync-options on the command line.')
+            ->example('-azC --force --delete --progress -h --checksum')
+            ->end()
+            ->scalarNode('host')
+            ->isRequired()
+            ->cannotBeEmpty()
+            ->info('Name or IP of the remote server')
+            ->end()
+            ->scalarNode('dir')
+            ->defaultValue('')
+            ->info('Remote root for your project. NB: this is not the document root. Usually a level before.')
+            ->end()
+            ->scalarNode('localdir')
+            ->defaultValue('')
+            ->info('Local root for this transfer if different than the project root ./')
+            ->end()
+            ->scalarNode('user')
+            ->defaultValue('')
+            ->info('The user on the destination server. If none is specified your local user is used.')
+            ->end()
+            ->scalarNode('port')
+            ->defaultValue('22')
+            ->info('TCP port.')
+            ->end()
+            ->scalarNode('timeout')
+            ->defaultValue('60')
+            ->info('Process timeout in seconds. Set it to 0 for no timeout.')
+            ->end()
+            ->variableNode('post_deploy_operations')
+            ->info('Shell commands to run after deploy on the remote machine.')
+            ->end();
+
         return $treeBuilder;
     }
 }

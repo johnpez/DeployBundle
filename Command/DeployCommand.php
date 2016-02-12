@@ -31,7 +31,7 @@ class DeployCommand extends ContainerAwareCommand
             ->addOption('go', null, InputOption::VALUE_NONE, 'Do the deployment')
             ->addOption('rsync-options', null, InputOption::VALUE_NONE, 'Options to pass to the rsync executable')
             ->addOption('force-vendor', null, InputOption::VALUE_NONE, 'Force sync of vendor dir.')
-            ;
+        ;
     }
 
     /**
@@ -42,20 +42,20 @@ class DeployCommand extends ContainerAwareCommand
 
         $config_root_path = $this->getContainer()->get('kernel')->getRootDir()."/config/";
         $output->getFormatter()->setStyle('notice', new OutputFormatterStyle('red', 'yellow'));
-        $available_env = $this->getContainer()->getParameter('deploy.config');       
-        
+        $available_env = $this->getContainer()->getParameter('deploy.config');
+
         $env = $input->getArgument('env');
-        
+
         if (!in_array($env, array_keys($available_env))) {
             throw new \InvalidArgumentException(sprintf('\'%s\' is no a valid environment. Valid environments: %s', $env, implode(",",array_keys($available_env))));
         }
-        
+
         foreach ($available_env[$env] as $key => $value) {
             $$key = $value;
         }
-        
+
         $ssh = 'ssh -p '.$port.'';
-        
+
         if ($input->getOption('rsync-options'))
             $rsync_options = $input->getOption('rsync-options');
 
@@ -63,14 +63,14 @@ class DeployCommand extends ContainerAwareCommand
             $rsync_options .= " --include 'vendor' ";
 
         $exclude_file_found = false;
-        
+
         if (file_exists($config_root_path.'rsync_exclude.txt')) {
             $rsync_options .= sprintf(' --exclude-from="%srsync_exclude.txt"', $config_root_path);
             $exclude_file_found = true;
         }
-        
-        if (file_exists($config_root_path."rsync_exclude_{$env}.txt")) {
-            $rsync_options .= sprintf(' --exclude-from="%srsync_exclude_{$env}.txt"', $config_root_path);
+
+        if (file_exists($config_root_path."rsync_exclude_".$env.".txt")) {
+            $rsync_options .= sprintf(' --exclude-from="%srsync_exclude_'.$env.'.txt"', $config_root_path);
             $exclude_file_found = true;
         }
 
@@ -80,10 +80,15 @@ class DeployCommand extends ContainerAwareCommand
         }
 
         $dryRun = $input->getOption('go') ? '' : '--dry-run';
-        
+
+//        $
+
         $user = ($user !='') ? $user."@" : "";
 
-        $command = "rsync $dryRun $rsync_options -e \"$ssh\" ./ $user$host:$dir";
+        $localdir = ($localdir != '') ? $localdir : "./";
+
+        $command = "rsync $dryRun $rsync_options -e \"$ssh\" $localdir $user$host:$dir";
+        print_r($command);
 
         $output->writeln(sprintf('%s on <info>%s</info> server with <info>%s</info> command',
             ($dryRun) ? 'Fake deploying' : 'Deploying',
@@ -96,12 +101,12 @@ class DeployCommand extends ContainerAwareCommand
         $output->writeln("\nSTART deploy\n--------------------------------------------");
 
         $process->run(function ($type, $buffer) use ($output) {
-                        if ('err' === $type) {
-                            $output->write( 'ERR > '.$buffer);
-                        } else {
-                            $output->write($buffer);
-                        }
-                    });
+            if ('err' === $type) {
+                $output->write( 'ERR > '.$buffer);
+            } else {
+                $output->write($buffer);
+            }
+        });
 
         $output->writeln("\nEND deploy\n--------------------------------------------\n");
 
@@ -111,11 +116,11 @@ class DeployCommand extends ContainerAwareCommand
             $output->writeln(sprintf('<info>Run the command with --go for really copy the files to %s server.</info>', $env));
 
         } else {
-            
+
             $output->writeln(sprintf("Deployed on <info>%s</info> server!\n", $env));
 
             if ( isset($post_deploy_operations) && count($post_deploy_operations) > 0 ) {
-                
+
                 $post_deploy_commands = implode("; ", $post_deploy_operations);
 
                 $output->writeln(sprintf("Running post deploy commands on <info>%s</info> server!\n", $env));
@@ -125,16 +130,16 @@ class DeployCommand extends ContainerAwareCommand
                 $process = new Process($command);
                 $process->setTimeout(($timeout == 0) ? null : $timeout);
                 $process->run(function ($type, $buffer) use ($output) {
-                        if ('err' === $type) {
-                            $output->write( 'ERR > '.$buffer);
-                        } else {
-                            $output->write($buffer);
-                        }
-                    });
+                    if ('err' === $type) {
+                        $output->write( 'ERR > '.$buffer);
+                    } else {
+                        $output->write($buffer);
+                    }
+                });
 
                 $output->writeln("\nDone");
 
-            } 
+            }
 
         }
 
